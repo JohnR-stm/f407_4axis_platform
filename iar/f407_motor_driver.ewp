@@ -2190,6 +2190,30 @@
         </file>
     </group>
     <group>
+        <name>config</name>
+        <file>
+            <name>$PROJ_DIR$\..\project\mdl_config\led_config.h</name>
+        </file>
+    </group>
+    <group>
+        <name>modules</name>
+        <group>
+            <name>stm32</name>
+            <group>
+                <name>led</name>
+                <file>
+                    <name>$PROJ_DIR$\..\project\modules\stm32\led\led_hw.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\project\modules\stm32\led\led_hw.h</name>
+                </file>
+            </group>
+            <group>
+                <name>uart</name>
+            </group>
+        </group>
+    </group>
+    <group>
         <name>ST</name>
         <group>
             <name>CMSIS</name>
