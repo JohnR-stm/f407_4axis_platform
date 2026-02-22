@@ -233,6 +233,7 @@
                     <name>CCDefines</name>
                     <state>USE_FULL_LL_DRIVER</state>
                     <state>STM32F4</state>
+                    <state>HSE_VALUE=8000000</state>
                 </option>
                 <option>
                     <name>CCPreprocFile</name>
@@ -615,7 +616,7 @@
                 </option>
                 <option>
                     <name>AOutputFile</name>
-                    <state></state>
+                    <state>$FILE_BNAME$.o</state>
                 </option>
                 <option>
                     <name>ALimitErrorsCheck</name>
@@ -2183,6 +2184,12 @@
     <group>
         <name>application</name>
         <file>
+            <name>$PROJ_DIR$\..\project\application\app_uart.c</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\project\application\app_uart.h</name>
+        </file>
+        <file>
             <name>$PROJ_DIR$\..\project\application\system_init.c</name>
         </file>
         <file>
@@ -2193,6 +2200,9 @@
         <name>config</name>
         <file>
             <name>$PROJ_DIR$\..\project\mdl_config\led_config.h</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\project\mdl_config\uart_config.h</name>
         </file>
     </group>
     <group>
@@ -2210,6 +2220,18 @@
             </group>
             <group>
                 <name>uart</name>
+                <file>
+                    <name>$PROJ_DIR$\..\project\modules\stm32\uart\uart.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\project\modules\stm32\uart\uart.h</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\project\modules\stm32\uart\uart_hw.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\project\modules\stm32\uart\uart_hw.h</name>
+                </file>
             </group>
         </group>
     </group>

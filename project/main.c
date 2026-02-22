@@ -4,9 +4,9 @@
  */
 
 #include "system_init.h"
-//#include "uart.h"
+#include "uart.h"
 #include "led_hw.h"
-//#include "app_uart.h"
+#include "app_uart.h"
 
 char string_A[] = "Hello, I'm STM32G070! \r\n";
 char string_B[] = "I am glad to see you! \r\n";
@@ -19,23 +19,19 @@ int main(void)
 {
   system_clock_config();
   leds_init();
-  //uart_init_all();
+  uart_init_all();
   //init_queue();
   
   while (1)
   {
-   // system_delay(200);
-    led_green_on();
-    
-    system_delay(800);
-    led_green_off();
-      
-    /// send message ///
-    //uart1_send_string(string_A);
-    system_delay(800);
-    
-    //uart1_send_string(string_B);
-    system_delay(800);
+   system_delay(500);
+   led_green_on(); 
+   uart1_send_string(string_A);
+   
+   system_delay(500);
+   led_green_off();
+   uart1_send_string(string_B);
+   
   }
 }
 
