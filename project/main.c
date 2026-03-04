@@ -26,12 +26,12 @@ int main(void)
   while (1)
   {
    system_delay(500);
-   led_red_on(); 
+   //led_red_on(); 
 
    uart1_send_string(string_A);
    
    system_delay(500);
-   led_red_off();
+   //led_red_off();
 
    uart1_send_string(string_B);
    
