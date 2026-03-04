@@ -8,4 +8,8 @@
 #define LED_GREEN_PORT                          GPIOA
 #define LED_GREEN                               LL_GPIO_PIN_6
 
+#define LED_RED_BUS                             LL_AHB1_GRP1_PERIPH_GPIOA
+#define LED_RED_PORT                            GPIOA
+#define LED_RED                                 LL_GPIO_PIN_7
+
 #endif /* _LED_CONFIG_H_ */

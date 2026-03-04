@@ -20,16 +20,19 @@ int main(void)
   system_clock_config();
   leds_init();
   uart_init_all();
+  dma_init();
   //init_queue();
   
   while (1)
   {
    system_delay(500);
-   led_green_on(); 
+   led_red_on(); 
+
    uart1_send_string(string_A);
    
    system_delay(500);
-   led_green_off();
+   led_red_off();
+
    uart1_send_string(string_B);
    
   }
