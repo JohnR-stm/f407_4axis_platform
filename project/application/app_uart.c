@@ -22,7 +22,6 @@
 #include "uart.h"
 
 static char string1[] = "Hello! I RECEIVED YOUR MESSAGE! \r\n";
-
 void dma_init(void);
 
 //-----------------------------------------------------------------------------
@@ -34,38 +33,71 @@ uint16_t last_pos = 0;              // last processed position
 
 //-----------------------------------------------------------------------------
 
+#define START_PACKET    0x3A
+#define END_PACKET      0x0D
+
+const char *addr = "33";
+
+#define ADDR_COUNT 2
 
 MB_ASCII_t modbus_cmd;
 
-const char *addr = "11";
 
-const char *code[] = {
-  "01",
-  "02",
-  "03"
+//---------------------------------------------- 
+//----------------------------------------------
+static void mb_system(MB_ASCII_t *mb);
+static void mb_operate(MB_ASCII_t *mb);
+static void mb_g_code(MB_ASCII_t *mb);
+//----------------------------------------------
+//---------------------------------------------- 
+
+//-----------------------------------------------
+//----------------------------------------------- 
+
+typedef void (*MB_cmd_func_t)(MB_ASCII_t *mb); 
+
+typedef struct {
+    const char *code_str;       // command MB
+    MB_cmd_func_t function;     // function
+} MB_cmd_t;
+
+//---------------------------------------------- 
+
+const MB_cmd_t MB_command[] = {
+    {"01",      mb_system},
+    {"02",      mb_operate},
+    {"10",      mb_g_code},
+    {"11",      NULL}
 };
 
+#define CODE_COUNT (sizeof(MB_command) / sizeof(Command_t))
+
+//----------------------------------------------- 
 //-----------------------------------------------
 
 typedef void (*command_func_t)(void); 
 
 typedef struct {
-    const char *command_str;   // command
-    command_func_t function;   // function
+    const char *command_str;    // command
+    command_func_t function;    // function
 } Command_t;
 
 //---------------------------------------------- 
 
 const Command_t command_table[] = {
-    {"red ld on",  led_red_off},
-    {"red ld off", led_red_on},
-    {"gr ld on",   led_green_off},
-    {"gr ld off",  led_green_on}
+    {"red ld on",       led_red_off},
+    {"red ld off",      led_red_on},
+    {"gr ld on",        led_green_off},
+    {"gr ld off",       led_green_on}
 };
 
 #define CMD_COUNT (sizeof(command_table) / sizeof(Command_t))
 
 //----------------------------------------------
+//---------------------------------------------- 
+
+
+
 
 
 //-----------------------------------------------------------------------------
@@ -118,13 +150,7 @@ void dma_init(void)
 
 void uart1_handler(void)
 {
-
-  
-    //led_green_blink();
-    
-    MB_fill_buffer(&modbus_cmd);
-    
-
+  MB_fill_buffer(&modbus_cmd);
   //uint8_t val = uart1_read_byte(); // read byte
   //if (val == 'v')
   //  uart1_send_string(string1);  
@@ -134,6 +160,7 @@ void uart1_handler(void)
 //-----------------------------------------------------------------------------
 // Fill Buffer
 //-----------------------------------------------------------------------------
+
 
 
 void MB_fill_buffer(MB_ASCII_t *mb)
@@ -147,25 +174,32 @@ void MB_fill_buffer(MB_ASCII_t *mb)
     uint8_t byte = rx_dma_buffer[last_pos];
     
     ///--- beginning of the package ---///
-    if (byte == ':') 
+    if (byte == START_PACKET) 
     {
       mb->pos = 0;
       mb->frameReady = false;
     }
     
-    mb->buffer[mb->pos++] = byte;
-    
-    if (byte == 0x0D && mb->pos > 1) 
+    if (byte == END_PACKET && mb->pos > 1) 
     {
-      ///--- comand processing ---///
+      ///--- equate 'END_PACKET' to '\0' ---///
+      mb->buffer[mb->pos] = '\0';
       mb->frameReady = true;
+#ifdef EXEC_ALL_CMD
       MB_check_command(mb);
+#endif
     }
-
+    else
+      mb->buffer[mb->pos] = byte;
+    
     last_pos++;
-    if (last_pos >= RX_BUF_SIZE) last_pos = 0;
+    mb->pos++;
+    if (last_pos >= RX_BUF_SIZE) last_pos = 0;  /// Cycle buffer
     if (mb->pos >= MB_BUF_SIZE) mb->pos = 0;    /// Overflow protection
   }
+  
+  ///--- comand processing ---///
+  MB_check_command(mb);
 }
 
 
@@ -173,39 +207,75 @@ void MB_fill_buffer(MB_ASCII_t *mb)
 // Check Command
 //-----------------------------------------------------------------------------
 
+void MB_check_command(MB_ASCII_t *mb)
+{
+  if (!mb->frameReady) return;
 
-void MB_check_command(MB_ASCII_t *mb) {
-    if (!mb->frameReady) return;
-
-    // change 0x0D to '\0' 
-    mb->buffer[mb->pos - 1] = '\0'; 
-
-    ///--- skip character ---///
-    char *received_data = (char *)&mb->buffer[1];
+  ///--- address verification ---///
+  if((mb->buffer[1] == (uint8_t)addr[0]) 
+     &&
+     (mb->buffer[2] == (uint8_t)addr[1]))
+  {
     
-    for (int i = 0; i < CMD_COUNT; i++) 
+    ///--- chose the code of the command ---///
+    for (uint8_t i = 0; i < CODE_COUNT; i++)
     {
-      //--- check strings ---//
-      size_t cmd_len = strlen(command_table[i].command_str);
-      size_t str_len = strlen(received_data);
-      if ( (strncmp(received_data, command_table[i].command_str, str_len) == 0)
-          &&
-           (cmd_len == str_len)) 
+      if((mb->buffer[3] == (uint8_t)MB_command[i].code_str[0])
+         &&
+         (mb->buffer[4] == (uint8_t)MB_command[i].code_str[1])
+         &&
+         (MB_command[i].function != NULL))
       {
-        command_table[i].function(); // start a function
+        MB_command[i].function(mb);  /// Execute command
         break;
       }
     }
-
-    mb->frameReady = false; // ?????????? ???? ????? ?????????
-    mb->pos = 0;
+  }
+  
+  mb->frameReady = false;  
+  mb->pos = 0;
 }
-
 
 //-----------------------------------------------------------------------------
 //
 //-----------------------------------------------------------------------------
 
+
+static void mb_system(MB_ASCII_t *mb)
+{
+  led_red_on();
+  led_green_on();
+}
+
+//-----------------------------------------------------------------------------
+
+static void mb_operate(MB_ASCII_t *mb)
+{
+  ///--- skip character ---///
+  char *received_data = (char *)&mb->buffer[6];
+  for (uint8_t i = 0; i < CMD_COUNT; i++) 
+  {
+    //--- check strings ---//
+    size_t cmd_len = strlen(command_table[i].command_str);
+    size_t str_len = strlen(received_data);
+    if ((strncmp(received_data, command_table[i].command_str, str_len) == 0)
+        &&
+        (cmd_len == str_len))
+    {
+      command_table[i].function(); // start a function
+      break;
+    }
+  }
+  
+}
+
+//-----------------------------------------------------------------------------
+
+static void mb_g_code(MB_ASCII_t *mb)
+{
+  led_red_off();
+  led_green_off();
+}
 
 
 //-----------------------------------------------------------------------------
